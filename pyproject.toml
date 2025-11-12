@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "finalproject-repko-m25-555"
+version = "0.1.0"
+description = "Консольное приложение валютный кошелек"
+authors = ["andr3w13 <petrarka895@gmail.com>"]
+readme = "README.md"
+
+# Указываем каталог, где находится пакет
+packages = [
+    { include = "valutatrade_hub" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+prettytable = "^3.16.0"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.14.4"
+
+[tool.poetry.scripts]
+project = "valutatrade_hub.cli.interface:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
