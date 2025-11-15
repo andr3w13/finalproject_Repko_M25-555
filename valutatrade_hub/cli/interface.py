@@ -1,24 +1,16 @@
 import shlex
-from valutatrade_hub.core import models, constants, utils
-from datetime import date
+from valutatrade_hub.core import models, constants, utils, usecases, exceptions
 import prompt
 import json
 import os
 import hashlib
+import datetime
 from pathlib import Path
 
 
 def main():
-    if not Path.exists(constants.DATA_PATH):
-        os.mkdir(constants.DATA_PATH)
-        for file_path in (constants.PORTFOLIOS_PATH, 
-                          constants.RATES_PATH, 
-                          constants.USERS_PATH):
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write('')
-
     while True:
-        user_input = prompt.string('> ')
+        user_input = prompt.string('> ').lower()
         args = shlex.split(user_input)
         match args[0]:
             
@@ -44,7 +36,7 @@ def main():
                             user_id = max((u['user_id'] for u in users), default=0) + 1
                             salt = os.urandom(16).hex()
                             hashed_password = hashlib.sha256((password + salt).encode('utf-8')).hexdigest()
-                            registration_date = date.today().isoformat()
+                            registration_date = datetime.date.today().isoformat()
 
                             new_user = models.User(user_id, username, hashed_password, salt, registration_date)
                             users.append(new_user.new_user)
@@ -102,7 +94,7 @@ def main():
                             print('У вас пока нет открытых кошельков.')
                         else:
                             base_ind = args.index('--base') + 1 if '--base' in args else None
-                            base = args[base_ind].upper() if base_ind else 'USD'
+                            base = args[base_ind].upper() if base_ind else constants.BASE_CURRENCY
 
                             with open(constants.RATES_PATH, 'r', encoding='utf-8') as f:
                                 rates = json.load(f)
@@ -135,16 +127,8 @@ def main():
                 currency = args[args.index('--currency') + 1].upper()
                 amount = float(args[args.index('--amount') + 1])
 
-                if currency == 'USD':
-                    print('Нельзя покупать USD.')
-                    continue
-
-                if amount <= 0:
-                    print('"amount" должен быть положительным числом.')
-                    continue
-
-                utils.process_trade(constants.CURRENT_SESSION, currency, amount, is_buy=True)
-                    
+                usecases.buy(currency, amount)
+       
             case 'sell':
                 if not constants.CURRENT_SESSION:
                     print('Сначала выполните login.')
@@ -157,15 +141,7 @@ def main():
                 currency = args[args.index('--currency') + 1].upper()
                 amount = float(args[args.index('--amount') + 1])
 
-                if currency == 'USD':
-                    print('Нельзя продавать USD.')
-                    continue
-
-                if amount <= 0:
-                    print('"amount" должен быть положительным числом.')
-                    continue
-
-                utils.process_trade(constants.CURRENT_SESSION, currency, amount, is_buy=False)
+                usecases.sell(currency, amount)
             
             case 'get-rate':
                 if len(args) != 5 or '--from' not in args or '--to' not in args:
@@ -174,12 +150,11 @@ def main():
 
                 source = args[args.index('--from') + 1].upper()
                 to = args[args.index('--to') + 1].upper()
-
-                rate, date, updated_at = utils.get_rate(source, to)
-
-                print(f'Курс {source} → {to}: {rate:.8f} (обновлено: {date} {updated_at})')
-                print(f'Обратный курс {to} → {source}: {1/rate:.8f}')
-
+                
+                try:
+                    usecases.get_rate(source, to)
+                except exceptions.CurrencyNotFoundError as e:
+                    print(e)
 
             case 'exit':
                 break
