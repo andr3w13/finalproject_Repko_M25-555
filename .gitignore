@@ -208,3 +208,6 @@ __marimo__/
 
 # Data
 data/
+
+# Settings
+valutatrade_hub/infra/config.json
