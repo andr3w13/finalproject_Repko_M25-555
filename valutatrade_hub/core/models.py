@@ -1,8 +1,7 @@
 import hashlib
-from valutatrade_hub.core import constants
+from valutatrade_hub.core import constants, exceptions
 import json
 from copy import deepcopy
-import pathlib
 
 
 class User():
@@ -93,7 +92,11 @@ class Wallet():
         if amount <= self._balance:
             self.balance -= amount
         else:
-            print('Сумма превышает баланс аккаунта.')
+            raise exceptions.InsufficientFundsError(
+                self.balance,
+                self._currency_code,
+                amount
+            )
 
 
 class Portfolio():
