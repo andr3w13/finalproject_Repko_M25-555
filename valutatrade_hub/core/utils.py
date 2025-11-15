@@ -1,5 +1,5 @@
 import json
-from valutatrade_hub.core import constants, models
+from valutatrade_hub.core import constants, models, exceptions
 from datetime import datetime, timedelta
 
 
@@ -29,74 +29,6 @@ def find_wallet_by_username(username):
             wallets = portfolio['wallets']
             break
     return wallets, user_id
-
-def process_trade(user, currency, amount, is_buy: bool):
-    wallets, user_id = find_wallet_by_username(user)
-
-    rates = safe_load_json(constants.RATES_PATH)
-
-    pairs = rates['pairs']
-    convert_string = f'{currency}_USD'
-
-    if not is_buy:
-        if currency not in wallets:
-            print(f'У вас нет кошелька "{currency}". ' + 
-                  'Добавьте валюту: она создаётся автоматически при первой покупке.')
-            return 
-
-        if amount > wallets[currency]['balance']:
-            print('Недостаточно средств: ' +
-                  f'доступно {wallets[currency]['balance']} {currency}, требуется {amount} {currency}')
-            return
-
-    if convert_string not in pairs:
-        print(f'Нет курса {currency} → USD.')
-        return 
-
-    rate = pairs[convert_string]['rate']
-    amount_usd = amount * rate 
-
-    if currency not in wallets:
-        portfolio = models.Portfolio(user_id, wallets)
-        portfolio.add_currency(currency)
-        wallets = portfolio.wallets
-
-    if 'USD' not in wallets:
-        return print('Сначала создайте кошелёк в USD.')
-
-    if is_buy:
-        if amount_usd > wallets['USD']['balance']:
-            return print('Недостаточно USD.')
-        before = wallets[currency]['balance']
-        wallets[currency]['balance'] += amount
-        wallets['USD']['balance'] -= amount_usd
-        print(f'Покупка выполнена: {amount:.4f} {currency} ' +
-              f'по курсу {rate:.2f} {currency}/USD')
-        s = 'стоимость покупки'
-    else:
-        if amount > wallets[currency]['balance']:
-            print(f'Недостаточно {currency}.')
-            return
-        before = wallets[currency]['balance']
-        wallets[currency]['balance'] -= amount
-        wallets['USD']['balance'] += amount_usd
-        print(f'Продажа выполнена: {amount:.4f} {currency} ' +
-              f'по курсу {rate:.2f} {currency}/USD')
-        s = 'выручка'
-
-    print('Измененения в портфеле:')
-    print(f'- {currency}: было {before:.4f} → стало {wallets[currency]["balance"]:.4f}')
-    print(f'Оценочная {s}: {amount_usd:,.2f} USD')
-
-    new_p = models.Portfolio(user_id, wallets)
-    portfolios = safe_load_json(constants.PORTFOLIOS_PATH)
-    for p in portfolios:
-        if p['user_id'] == user_id:
-            p.update(new_p.new_portfolio)
-            break
-
-    with open(constants.PORTFOLIOS_PATH, 'w', encoding='utf-8') as f:
-        json.dump(portfolios, f, indent=4, ensure_ascii=False)
 
 
 def check_time(time_str):
@@ -141,6 +73,11 @@ def fetch_from_parser(source, to):
     import random
 
     rate = round(random.uniform(0.1, 5.0), 5)
+    prob = random.uniform(0, 1)
+
+    if prob > 0.7:
+        # raise exceptions.ApiRequestError
+        return None, None, None
 
     now = datetime.now()
     date = now.date().isoformat()
@@ -165,40 +102,7 @@ def fetch_from_parser(source, to):
 
 #     with open(constants.RATES_PATH, 'w', encoding='utf-8') as f:
 #         json.dump(data, f, indent=4, ensure_ascii=False)
-
-
-def get_rate(source, target):
-    with open(constants.RATES_PATH, 'r', encoding='utf-8') as f:
-        data = json.load(f)
-
-    pair_key = f'{source}_{target}'
-    reverse_key = f'{target}_{source}'
-
-    if pair_key in data['pairs']:
-        pair = data['pairs'][pair_key]
-        date, updated_at = pair['updated_at'].split('T')
-        updated_at = updated_at.rstrip('Z')
-
-        if is_fresh(pair['updated_at']):
-            return pair['rate'], date, updated_at
-        else:
-            new_rate, date, updated_at = fetch_from_parser(source, target)
-            return new_rate, date, updated_at
-
-    if reverse_key in data['pairs']:
-        pair = data['pairs'][reverse_key]
-        date, updated_at = pair['updated_at'].split('T')
-        updated_at = updated_at.rstrip('Z')
-
-        if is_fresh(pair['updated_at']):
-            rate = 1 / pair['rate']
-            return rate, date, updated_at
-        else:
-            new_rate, date, updated_at = fetch_from_parser(target, source)
-            return 1 / new_rate, date, updated_at
-
-    new_rate, date, updated_at = fetch_from_parser(source, target)
-    return new_rate, date, updated_at
+    
 
 
 
