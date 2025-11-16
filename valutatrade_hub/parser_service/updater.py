@@ -76,7 +76,6 @@ class RatesUpdater:
         updated_pairs = {}
         for key, rate in collected_rates.items():
             from_code, to_code = key.split('_')
-            updated_at = last_refresh
             source_name = collected_meta.get(key, {}).get('source', 'unknown')
 
             updated_pairs[key] = {

@@ -25,7 +25,7 @@ def main() -> None:
                 if len(args) != 5:
                     print('Команда введена неправильно.')
                 else:
-                    if not '--username' in args or not '--password' in args:
+                    if '--username' not in args or '--password' not in args:
                         print('Имя пользователя и/или пароль не были заданы.')
                     else:
                         username = args[args.index('--username') + 1]
@@ -65,7 +65,7 @@ def main() -> None:
                 if len(args) != 5:
                     print('Команда введена неправильно.')
                 else:
-                    if not '--username' in args or not '--password' in args:
+                    if '--username' not in args or '--password' not in args:
                         print('Имя пользователя и/или пароль не были заданы.')
                     else:
                         username = args[args.index('--username') + 1]

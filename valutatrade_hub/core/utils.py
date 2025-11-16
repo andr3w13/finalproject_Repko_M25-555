@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any
-from valutatrade_hub.core import constants, exceptions
+from valutatrade_hub.core import constants
 from valutatrade_hub.parser_service.updater import RatesUpdater
 
 
@@ -88,7 +88,7 @@ def fetch_from_parser(source: str, to: str):
         print(f"Из кэша (свежий): {source}→{to} = {rate}")
         return rate, date, updated_at
 
-    print(f"Кэш устарел → обновляю...")
+    print("Кэш устарел → обновляю...")
     updater = RatesUpdater()
     updater.run_update()
 

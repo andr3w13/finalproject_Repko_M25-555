@@ -1,6 +1,5 @@
 import logging
 from functools import wraps
-from datetime import datetime
 from valutatrade_hub.core import constants
 
 logger = logging.getLogger('actions_logger')
@@ -21,7 +20,6 @@ def log_action(action_name, verbose=False):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            timestamp = datetime.now().isoformat(sep='T', timespec='seconds')
             user = kwargs.get('user') or (args[0] if args else 'unknown')
             currency = kwargs.get('currency_code') or (args[0] if args else 'unknown')
             amount = kwargs.get('amount') or (args[1] if len(args) > 1 else 0)
