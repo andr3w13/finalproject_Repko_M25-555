@@ -4,45 +4,45 @@
 Поддерживает регистрацию, покупку/продажу, портфель, кэш курсов и логирование.
 
 ## Структура каталогов
-finalproject_Repko_M25-555/
-│  
-├── data/
-│    ├── users.json          
-│    ├── portfolios.json       
-│    ├── rates.json               
-│    └── exchange_rates.json                 
-├── valutatrade_hub/
-│    ├── __init__.py
-│    ├── logging_config.py         
-│    ├── decorators.py            
-│    ├── core/
-│    │    ├── __init__.py
-│    │    ├── currencies.py         
-│    │    ├── exceptions.py         
-│    │    ├── models.py           
-│    │    ├── usecases.py
-│    │    ├── constants.py
-│    │    └── utils.py             
-│    ├── infra/
-│    │    ├── __init__.py
-│    │    ├── config.json 
-│    │    └── settings.py                    
-│    ├── parser_service/
-│    │    ├── __init__.py
-│    │    ├── config.py             
-│    │    ├── api_clients.py        
-│    │    ├── updater.py            
-│    │    └── storage.py                       
-│    └── cli/
-│         ├─ __init__.py
-│         └─ interface.py     
-│
-├── main.py
-├── Makefile
-├── poetry.lock
-├── pyproject.toml
-├── README.md
-└── .gitignore               
+finalproject_Repko_M25-555/ \\
+│  \\
+├── data/ \\
+│    ├── users.json \\          
+│    ├── portfolios.json \\       
+│    ├── rates.json \\              
+│    └── exchange_rates.json \\                 
+├── valutatrade_hub/ \\
+│    ├── __init__.py \\
+│    ├── logging_config.py  \\       
+│    ├── decorators.py      \\      
+│    ├── core/ \\
+│    │    ├── __init__.py \\
+│    │    ├── currencies.py \\        
+│    │    ├── exceptions.py   \\      
+│    │    ├── models.py         \\  
+│    │    ├── usecases.py \\
+│    │    ├── constants.py \\
+│    │    └── utils.py       \\      
+│    ├── infra/ \\
+│    │    ├── __init__.py \\
+│    │    ├── config.json \\
+│    │    └── settings.py   \\                 
+│    ├── parser_service/ \\
+│    │    ├── __init__.py \\
+│    │    ├── config.py     \\        
+│    │    ├── api_clients.py  \\      
+│    │    ├── updater.py       \\     
+│    │    └── storage.py        \\               
+│    └── cli/ \\
+│         ├─ __init__.py \\
+│         └─ interface.py  \\   
+│ \\
+├── main.py \\
+├── Makefile \\
+├── poetry.lock \\
+├── pyproject.toml \\
+├── README.md \\
+└── .gitignore  \\             
 
 ## Установка
 1. make install
