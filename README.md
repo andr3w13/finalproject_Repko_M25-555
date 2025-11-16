@@ -12,7 +12,7 @@ finalproject_Repko_M25-555/
 │    ├── rates.json            
 │    └── exchange_rates.json                   
 ├── valutatrade_hub/  
-│    ├── __init__.py  
+│    ├── \__init__.py  
 │    ├── logging_config.py         
 │    ├── decorators.py              
 │    ├── core/   
