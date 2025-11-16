@@ -4,7 +4,6 @@ from typing import List
 from valutatrade_hub.parser_service.api_clients import BaseApiClient, CoinGeckoClient, ExchangeRateApiClient
 from valutatrade_hub.parser_service.storage import ExchangeRatesRepo, RatesCache
 from valutatrade_hub.parser_service.config import ParserConfig
-from valutatrade_hub.core import exceptions
 
 cfg = ParserConfig()
 logger = logging.getLogger('parser')
