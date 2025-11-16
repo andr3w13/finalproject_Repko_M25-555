@@ -5,10 +5,17 @@ import json
 import os
 import hashlib
 import datetime
-from pathlib import Path
+from valutatrade_hub.parser_service.updater import RatesUpdater
+from valutatrade_hub.parser_service.storage import RatesCache
 
 
-def main():
+def main() -> None:
+    """
+    Основная функция CLI-интерфейса торговой платформы ValutaTrade Hub.
+
+    Реализует интерактивную консольную оболочку для управления пользователями,
+    портфелем, курсами валют и обновлением данных из внешних API.
+    """
     while True:
         user_input = prompt.string('> ').lower()
         args = shlex.split(user_input)
@@ -45,7 +52,7 @@ def main():
 
                             portfolios = utils.safe_load_json(constants.PORTFOLIOS_PATH)
 
-                            new_portfolio = models.Portfolio(user_id, {})
+                            new_portfolio = models.Portfolio(user_id, {'USD': {'balance': 10000.0}})
                             portfolios.append(new_portfolio.new_portfolio)
 
                             with open(constants.PORTFOLIOS_PATH, 'w', encoding='utf-8') as f:
@@ -142,7 +149,25 @@ def main():
                 amount = float(args[args.index('--amount') + 1])
 
                 usecases.sell(currency, amount)
-            
+
+            case 'update-rates':
+                if len(args) != 1 and len(args) != 2:
+                    print('Команда введена неправильно')
+                else:
+                    source = args[args.index('--source') + 1] if '--source' in args else None
+                    rates_updater = RatesUpdater()
+                    try:
+                        summary = rates_updater.run_update(source=source)
+                        print(f"Обновление завершено. Курсов обновлено: {summary['total_fetched']}")
+                        if summary['errors']:
+                            print("Ошибки:")
+                            for client, err in summary['errors']:
+                                print(f"  - {client}: {err}")
+                        else:
+                            print("Все источники обновлены успешно.")
+                    except Exception as e:
+                        print(f"Критическая ошибка: {e}")
+
             case 'get-rate':
                 if len(args) != 5 or '--from' not in args or '--to' not in args:
                     print('Команда введена неправильно.')
@@ -155,6 +180,67 @@ def main():
                     usecases.get_rate(source, to)
                 except exceptions.CurrencyNotFoundError as e:
                     print(e)
+            
+            case 'show-rates':
+                cache = RatesCache()
+                data = cache.read()
+                pairs = data.get('pairs', {})
+                last_refresh = data.get('last_refresh', 'неизвестно')
+
+                if not pairs:
+                    print("Локальный кэш курсов пуст. Выполните 'update-rates'.")
+                    continue
+
+                currency_filter = None
+                top_n = None
+                base = constants.BASE_CURRENCY
+
+                i = 1
+                while i < len(args):
+                    if args[i] == '--currency' and i + 1 < len(args):
+                        currency_filter = args[i + 1].upper()
+                        i += 2
+                    elif args[i] == '--top' and i + 1 < len(args):
+                        try:
+                            top_n = int(args[i + 1])
+                            i += 2
+                        except ValueError:
+                            print("Параметр --top должен быть числом.")
+                            continue
+                    elif args[i] == '--base' and i + 1 < len(args):
+                        base = args[i + 1].upper()
+                        i += 2
+                    else:
+                        i += 1
+
+                filtered = {}
+                for key, info in pairs.items():
+                    from_curr, to_curr = key.split('_')
+                    if currency_filter and from_curr != currency_filter:
+                        continue
+                    if to_curr != base:
+                        continue
+                    filtered[key] = info
+
+                if currency_filter and not filtered:
+                    print(f"Курс для '{currency_filter}' не найден в кэше.")
+                    continue
+
+                if top_n:
+                    sorted_items = sorted(
+                        filtered.items(),
+                        key=lambda x: x[1]['rate'],
+                        reverse=True
+                    )[:top_n]
+                else:
+                    sorted_items = sorted(filtered.items(), key=lambda x: x[0])
+
+                print(f"Курсы из кэша (обновлено: {last_refresh}):")
+                for key, info in sorted_items:
+                    rate = info['rate']
+                    updated = info['updated_at'].split('T')[1][:8]
+                    source = info.get('source', 'unknown')
+                    print(f"- {key}: {rate:,.8f} (↑ {updated}, {source})")
 
             case 'exit':
                 break
