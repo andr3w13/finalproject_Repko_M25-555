@@ -111,11 +111,13 @@ class RatesCache:
 
     def write(self, pairs: Dict[str, Dict[str, Any]], last_refresh: str) -> None:
         """Записывает в rates.json с правильной структурой."""
-        payload = {
-            "pairs": pairs,
-            "last_refresh": last_refresh
-        }
+        if not pairs:
+            raise ValueError("pairs cannot be empty")
+        if not last_refresh:
+            raise ValueError("last_refresh required")
+
+        payload = {"pairs": pairs, "last_refresh": last_refresh}
         try:
             _atomic_write(self.path, payload)
         except Exception as e:
-            raise exceptions.ApiRequestError(f'Failed to write rates cache: {e}')
+            raise exceptions.ApiRequestError(f'Cache write error: {e}')

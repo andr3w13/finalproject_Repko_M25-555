@@ -87,3 +87,6 @@ exchange_rates.json — полная история (по записям)
     * Получите ключ на exchangerate-api.com
     * Создайте .env в корне:
         + EXCHANGERATE_API_KEY=your_api_key_here
+
+## Демонстрация работы
+[![asciicast](https://asciinema.org/a/XH2t8TF7Y1CDAmOKXeLO7Mp3P.svg)](https://asciinema.org/a/XH2t8TF7Y1CDAmOKXeLO7Mp3P)

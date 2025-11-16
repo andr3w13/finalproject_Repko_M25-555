@@ -55,7 +55,6 @@ class RatesUpdater:
         for client in self.clients:
             client_name = client.__class__.__name__
             if source and source.lower() not in client_name.lower():
-                logger.info(f'Skipping {client_name} (not matching source filter)')
                 continue
 
             logger.info(f'Fetching from {client_name}...')
@@ -66,32 +65,59 @@ class RatesUpdater:
                 logger.info(f'OK ({fetched} rates)')
                 collected_rates.update(rates)
                 collected_meta.update(meta)
-            except exceptions.ApiRequestError as e:
-                logger.error(f'Failed to fetch from {client_name}: {e}')
+            except Exception as e:
+                logger.error(f'Failed: {e}')
                 errors.append((client_name, str(e)))
-                continue
 
-        last_refresh = self._utc_iso_now()
-
-        updated_pairs = {}
-        for key, rate in collected_rates.items():
-            from_code, to_code = key.split('_')
-            source_name = collected_meta.get(key, {}).get('source', 'unknown')
-
-            updated_pairs[key] = {
-                'rate': float(rate),
-                'updated_at': last_refresh, 
-                'source': source_name
+        # ← КЛЮЧЕВОЕ: если ничего не получено → не падаем, но не пишем
+        if not collected_rates:
+            logger.warning("No rates fetched. Skipping cache write.")
+            return {
+                'total_fetched': 0,
+                'written_history': 0,
+                'last_refresh': None,
+                'errors': errors or ['no_data']
             }
 
-        self.cache.write(updated_pairs, last_refresh)
+        last_refresh = self._utc_iso_now()
+        updated_pairs = {}
 
+        written_history = 0
         for key, rate in collected_rates.items():
-            from_code, to_code = key.split('_')
-            self.history.save_measurement(
-                from_currency=from_code,
-                to_currency=to_code,
-                rate=rate,
-                source=collected_meta.get(key, {}).get('source', 'unknown'),
-                meta=collected_meta.get(key, {})
-            )
+            try:
+                from_code, to_code = key.split('_')
+                source_name = collected_meta.get(key, {}).get('source', 'unknown')
+                updated_pairs[key] = {
+                    'rate': float(rate),
+                    'updated_at': last_refresh,
+                    'source': source_name
+                }
+
+                self.history.save_measurement(
+                    from_currency=from_code,
+                    to_currency=to_code,
+                    rate=rate,
+                    source=source_name,
+                    meta=collected_meta.get(key, {})
+                )
+                written_history += 1
+            except Exception as e:
+                logger.error(f'Failed to process {key}: {e}')
+
+        # ← Безопасная запись
+        try:
+            self.cache.write(updated_pairs, last_refresh)
+            logger.info(f'Wrote {len(updated_pairs)} rates to cache')
+        except Exception as e:
+            logger.error(f'Cache write failed: {e}')
+            errors.append(('cache', str(e)))
+
+        summary = {
+            'total_fetched': total_fetched,
+            'written_history': written_history,
+            'last_refresh': last_refresh,
+            'errors': errors
+        }
+
+        logger.info(f'Update complete. Fetched: {total_fetched}, Cache: {len(updated_pairs)}')
+        return summary
