@@ -12,11 +12,11 @@ finalproject_Repko_M25-555/
 │    ├── rates.json            
 │    └── exchange_rates.json                   
 ├── valutatrade_hub/  
-│    ├── \__init__.py  
+│    ├── \_\_init\_\_.py  
 │    ├── logging_config.py         
 │    ├── decorators.py              
 │    ├── core/   
-│    │    ├── __init__.py  
+│    │    ├── \_\_init\_\_.py  
 │    │    ├── currencies.py          
 │    │    ├── exceptions.py        
 │    │    ├── models.py    
@@ -24,17 +24,17 @@ finalproject_Repko_M25-555/
 │    │    ├── constants.py  
 │    │    └── utils.py        
 │    ├── infra/  
-│    │    ├── __init__.py  
+│    │    ├── \_\_init\_\_.py  
 │    │    ├── config.json  
 │    │    └── settings.py                   
 │    ├── parser_service/  
-│    │    ├── __init__.py  
+│    │    ├── \_\_init\_\_.py  
 │    │    ├── config.py          
 │    │    ├── api_clients.py        
 │    │    ├── updater.py       
 │    │    └── storage.py                 
 │    └── cli/  
-│         ├─ __init__.py  
+│         ├─ \_\_init\_\_.py  
 │         └─ interface.py     
 │  
 ├── main.py  
