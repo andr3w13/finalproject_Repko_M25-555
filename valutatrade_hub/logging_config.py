@@ -4,14 +4,20 @@ from valutatrade_hub.core import constants
 
 
 def setup_logging():
+    """
+    Настраивает логгер 'valutatrade':
+      - уровень INFO
+      - запись в файл с ротацией (1 МБ, 5 бэкапов)
+      - формат из constants.LOGS_RAW_FORMAT
+    """
     logger = logging.getLogger("valutatrade")
     if logger.handlers:
-        return logger  
+        return logger 
 
     logger.setLevel(logging.INFO)
 
     log_file = constants.ACTIONS_LOG_PATH
-    log_format = constants.LOGS_RAW_FORMAT  
+    log_format = constants.LOGS_RAW_FORMAT
 
     python_format = (
         log_format
@@ -35,4 +41,5 @@ def setup_logging():
     return logger
 
 
+# Глобальный логгер
 logger = setup_logging()

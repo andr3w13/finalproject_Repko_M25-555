@@ -4,12 +4,10 @@ from pathlib import Path
 
 class SettingsLoader:
     """
-    Singleton, отвечающий за загрузку и хранение конфигурации проекта.
+    Singleton для загрузки и хранения конфигурации проекта.
 
-    Причина выбора подхода через __new__:
-    - максимально простой и читаемый способ
-    - легко контролировать единственный экземпляр
-    - корректно работает при любых импортах (модуль создаёт объект один раз)
+    Гарантирует создание директорий и файлов по умолчанию.
+    Использует __new__ для единственного экземпляра.
     """
 
     _instance = None
@@ -20,6 +18,7 @@ class SettingsLoader:
     USERS_PATH = DATA_PATH / 'users.json'
     PORTFOLIOS_PATH = DATA_PATH / 'portfolios.json'
     RATES_PATH = DATA_PATH / 'rates.json'
+    EXCHANGE_RATES_PATH = DATA_PATH / 'exchange_rates.json'
 
     LOG_DIR = PROJECT_ROOT / 'logs'
     ACTIONS_LOG = LOG_DIR / 'actions.log'
@@ -29,6 +28,7 @@ class SettingsLoader:
         'USERS_PATH': str(USERS_PATH),
         'PORTFOLIOS_PATH': str(PORTFOLIOS_PATH),
         'RATES_PATH': str(RATES_PATH),
+        'EXCHANGE_RATES_PATH': str(EXCHANGE_RATES_PATH),
         'RATES_TTL_SECONDS': 300,
         "LOG_DIR": str(LOG_DIR),
         "ACTIONS_LOG_PATH": str(ACTIONS_LOG),
@@ -36,52 +36,52 @@ class SettingsLoader:
         "BASE_CURRENCY": "USD"
     }
 
-    def __new__(cls, config_path):
+    def __new__(cls, config_path=None):
+        """Создаёт единственный экземпляр."""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, config_path):
+    def __init__(self, config_path=None):
+        """Инициализирует пути, создаёт файлы и загружает конфиг."""
         if getattr(self, '_initialized', False):
             return
 
-        if not hasattr(self, '_initialized'):
-            self._initialized = True
-            self.config_path = Path(config_path) if config_path else Path('config.json')
-            self.DATA_PATH.mkdir(parents=True, exist_ok=True)
-            self.LOG_DIR.mkdir(parents=True, exist_ok=True)
-            self._ensure_config_file()
-            self.reload()
-
+        self.config_path = Path(config_path) if config_path else self.PROJECT_ROOT / 'infra' / 'config.json'
+        self._ensure_structure()
+        self.reload()
         self._initialized = True
 
-        self.config_path = Path(config_path) if config_path else Path('config.json')
+    def _ensure_structure(self):
+        """Создаёт директории и файлы по умолчанию."""
+        self.DATA_PATH.mkdir(parents=True, exist_ok=True)
+        self.LOG_DIR.mkdir(parents=True, exist_ok=True)
 
-        self._ensure_config_file()
+        for path, default in [
+            (self.USERS_PATH, '[]'),
+            (self.PORTFOLIOS_PATH, '[]'),
+            (self.RATES_PATH, '{"pairs": {}, "last_refresh": null}'),
+            (self.EXCHANGE_RATES_PATH, '[]'),
+        ]:
+            if not path.exists():
+                path.write_text(default, encoding='utf-8')
 
-        self.reload()
+        if not self.ACTIONS_LOG.exists():
+            self.ACTIONS_LOG.write_text('', encoding='utf-8')
 
-    def get(self, key, default=None):
-        return self._config.get(key, default)
+        if not self.config_path.exists():
+            self.config_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.config_path, 'w', encoding='utf-8') as f:
+                json.dump(self.DEFAULT_CONFIG, f, indent=4, ensure_ascii=False)
 
     def reload(self):
+        """Перезагружает конфиг из файла."""
         with open(self.config_path, 'r', encoding='utf-8') as f:
             self._config = json.load(f)
 
-    def _ensure_config_file(self):
-        """Создаёт config.json, если он отсутствует."""
-        if self.config_path.exists():
-            return
-
-        for path in [self.USERS_PATH, self.PORTFOLIOS_PATH, self.RATES_PATH, self.ACTIONS_LOG]:
-            if not path.exists():
-                if path == self.ACTIONS_LOG:
-                    path.write_text('', encoding='utf-8')
-                else:
-                    path.write_text('{}', encoding='utf-8')
-
-        with open(self.config_path, 'w', encoding='utf-8') as f:
-            json.dump(self.DEFAULT_CONFIG, f, indent=4, ensure_ascii=False)
+    def get(self, key, default=None):
+        """Получает значение из конфига."""
+        return self._config.get(key, default)
 
     def __repr__(self):
         return f'SettingsLoader(config_path="{self.config_path}")'
